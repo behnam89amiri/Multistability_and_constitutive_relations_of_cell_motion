@@ -1,3 +1,5 @@
+[![License: CC BY-NC-ND 4.0](https://img.shields.io/badge/License-CC_BY--NC--ND_4.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-nd/4.0/)
+
 # Multistability of the motile state of MDA MB 231 cells
 This code is used to study the multistability and constitutive relations of single cell motion on Fibronectin lanes.
 For an automated high-throughput data analysis, the fluorescent signal of the nucleus of single cells is tracked over time, see `track_cells`.
