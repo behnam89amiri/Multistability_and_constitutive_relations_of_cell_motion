@@ -20,6 +20,9 @@ macro "myKymo [0]" {
 	 * saves Kymograph and Roi of selection in video
 	 * has built-in test mode to check the lines positions'
 	 */
+	 print("");
+	 getDateAndTime(year, month, dayOfWeek, dayOfMonth, hour, minute, second, msec);
+	 print("Macro started at " + hour + ":" + minute + " " + dayOfMonth + "/" + (month+1) + "/" + year);
 
 	// sets parameters correctly
 	run("Line Width...", "line=5");
@@ -29,17 +32,19 @@ macro "myKymo [0]" {
 
 	import_coordinates = getBoolean("Do you want to import the coordinates from a csv file?");
 	
-	del_d = 136;
-	binning = 2048 / getHeight();
+	del_d = 136; // shortest distance between lanes
+	max_y = getHeight();
+	binning = 2048 / max_y;
+	binning = 0.5;
 	del_d = del_d / binning;
 
 	if (import_coordinates) {
 	// pay attention to binning factor.
 		path_lines = File.openDialog("Choose the corresponding csv file:");//automatise by extracting ID and opening file automatically?
-		x1 = readLines(path_lines, 0);
-		x2 = readLines(path_lines, 1);
-		y1 = readLines(path_lines, 2);
-		y2 = readLines(path_lines, 3);
+		x1 = readLines(path_lines, 0, binning);
+		x2 = readLines(path_lines, 1, binning);
+		y1 = readLines(path_lines, 2, binning);
+		y2 = readLines(path_lines, 3, binning);
 	} else { // Gets user's line and uses its coordinates
 		getSelectionCoordinates(xSelec, ySelec);
 		x1_0 = xSelec[0];
@@ -53,9 +58,9 @@ macro "myKymo [0]" {
 		y2 = newArray(1);
 		y1[0] = y1_0;
 		y2[0] = y2_0;
-
-		n = 0;
-		while ((y1[n] + del_y < getHeight()) && (y2[n] + del_y < getHeight())) {
+		
+		n = 1;
+		while ((y1[n-1] + del_y < max_y) && (y2[n-1] + del_y < max_y)) {
 			y1 = append(y1, round(y1_0 + n*del_y));
 			y2 = append(y2, round(y2_0 + n*del_y));
 			n = n + 1;
@@ -74,6 +79,11 @@ macro "myKymo [0]" {
 
 	imageName = getTitle();
 	isTest = getBoolean("Is this a test to check the line's positions?");
+	if (isTest) {
+		print("Max y-value: " + max_y);
+		list("y1", y1);
+		list("y2", y2);
+	}
 	if (!isTest) {
 		pos = getNumber("This is the n-th position of the experiment. n:", 1);
 		isNucleus = getBoolean("Does the kymograph display the nucleus?");
@@ -106,6 +116,10 @@ macro "myKymo [0]" {
 			print("line: " + i, ", y1: " + y1[i], ", y2: " + y2[i]);
 		}
 	}
+	if (isTest && !import_coordinates) {
+		makeLine(x1[0], y1[0], x2[0], y2[0]); // end with first position. This makes it easier to change the line.
+	}
+	print("Macro executed successfully.");
 }
 
 
@@ -133,7 +147,7 @@ function list(name, a) {
         print("   "+a[i]);
 }
 
-function readLines(path, colNr) {
+function readLines(path, colNr, binFactor) {
 	// returns column  in a csv file
 	// returns array type num
 	// identified by colNr (0-indexing)
@@ -167,6 +181,7 @@ function readLines(path, colNr) {
 	    	if (isNaN(item)) {
 	    		exit("Parsing Error. Item could not be converted to type float. \nItem: " + items[j]);
 	    	}
+	    	item = item / binFactor;
 	    	x1 = append(x1, item);
 	    }
 
